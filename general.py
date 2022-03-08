@@ -1,23 +1,38 @@
 from pymongo import MongoClient
-
+import random
 
 def uploadGeneraltoDB():
   client = MongoClient("mongodb://localhost:27017")  ##DB
 
-  db = client.crawl
-  indata = list(db.internal.find({}, {'_id' : False}))[:3]
-
 
   db = client.crawl
-  exdata = list(db.external.find({}, {'_id' : False}))[:3]
+  db2 = client.post
 
 
-  db = client.post
   #table drop
-  db.generalTable.drop()
-  #table insert
-  db.generalTable.insert_many(indata)
-  db.generalTable.insert_many(exdata)
+  db2.generalTable.drop()
 
-if __name__ == '__main__':
-    uploadGeneraltoDB()
+
+  #table insert
+
+  cnt = 0
+
+  while(cnt < 3):
+    n = random.randint(0,50)
+
+    interData = db.internal.find({'source':"교내정보"}, {'_id' : False})[n]
+
+    if 'img src=' not in interData ['text'] and '/cms/' not in interData['text'] :
+        print(interData)
+        print('\n')
+        db2.generalTable.insert_one(interData)
+        cnt += 1
+
+
+  n = random.randint(0,30)
+  db2.generalTable.insert_one(db.external.find({'source': "AI타임스"}, {'_id' : False})[n])
+  db2.generalTable.insert_one(db.external.find({'source': "전자신문"}, {'_id' : False})[n])
+  db2.generalTable.insert_one(db.external.find({'source': "KBS"}, {'_id' : False})[n])
+
+
+  print("generalTable 생성 완료")

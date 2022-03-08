@@ -1,3 +1,4 @@
+
 import argparse
 import sys, os
 import urllib
@@ -64,11 +65,11 @@ def extract_job(item):
     link = f"http://www.jobkorea.co.kr/Recruit/GI_Read/{data_gno}"
 
     # text2
-    text2 = "회사: " + company + \
-            "\n위치: " + location + \
-            "\n자격: " + qualification + \
-            "\n고용형태: " + position + \
-            "\n태그: " + tag
+    text2 = "· 회사:\t" + company + \
+            "\n· 위치:\t" + location + \
+            "\n· 자격:\t" + qualification + \
+            "\n· 고용형태:\t" + position + \
+            "\n· 태그:\t" + tag
 
     return {"source": 'JobKorea', "title": title, "date": '', "url": link, "text": "", "text2": text2, "img": '',
             "subtitle": ''}
@@ -100,33 +101,50 @@ def extract_jobs(last_page, url):
 def JobKorea():
     url = "https://www.jobkorea.co.kr/Search/?local=D000%2CI000%2CB000%2CG000%2CO000%2CE000%2CM000%2CJ000%2CA000%2CC000%2CH000%2CF000%2CL000%2CP000%2C1000%2CK000%2CQ000%2CN000"
     # last_page = get_last_page(url)
-    last_page = 10 #todo 개수설정 (마지막 페이지 정하기 한페이지당 20개)
+    last_page = 5 #todo 개수설정 (마지막 페이지 정하기 한페이지당 20개)
     jobs = extract_jobs(last_page, url)
 
     #### 데이터 처리 ######################################################
-    date = date_f()
+    #date = date_f()
 
-    print('데이터프레임 변환\n')
-    news_df = DataFrame(jobs).transpose().T
+    #print('데이터프레임 변환\n')
+    #news_df = DataFrame(jobs).transpose().T
 
-    xlsx_file_name = '{}_{}개_{}.xlsx'.format('jobkorea', last_page * 20, date)
-    news_df.to_excel(xlsx_file_name)
+    #xlsx_file_name = '{}_{}개_{}.xlsx'.format('jobkorea', last_page * 20, date)
+    #news_df.to_excel(xlsx_file_name)
 
-    print('엑셀 저장 완료')
+    #print('엑셀 저장 완료')
+
+def extract_thinkText(url):
+    req = requests.get(url)
+    req.encoding = None
+    soup2 = BeautifulSoup(req.text, 'html.parser')
+
+    img = ''
+
+    text = BeautifulSoup(str(soup2.find('div', {'class': 'info-cont'}))).text.replace("●","\n●").strip()
+
+    poster = soup2.find('img', {'id': 'poster'})
+
+    if poster:
+        img = 'https://www.thinkcontest.com' +str(poster["src"])
+
+    return text, img
+
 
 def ThinkGood():
     print('씽굿 크롤링 시작')
     print('\n' + '=' * 100 + '\n')
 
     res = {}
-    maxPage = 20  #todo 개수설정 (한페이지 10개)
+    maxPage = 10  # todo 개수설정 (한페이지 10개)
 
     pbar = tqdm(total=maxPage, leave=True)
     for page in range(1, maxPage + 1):
         title = ""
         period = ""
-        n_url =""
-        category =""
+        n_url = ""
+        category = ""
         host = ""
 
         url = 'https://www.thinkcontest.com/Contest/CateField.html?page=' + str(page)
@@ -143,7 +161,9 @@ def ThinkGood():
                 if i == 0:
                     divs = td[i].find_all('div')
                     title = divs[0].find('a').text  # 제목
-                    n_url = 'https://www.thinkcontest.com'+divs[0].find('a').get('href')  # url
+                    n_url = 'https://www.thinkcontest.com' + divs[0].find('a').get('href')  # url
+
+                    text,img = extract_thinkText(n_url)
 
                     labelingTmp = divs[0].find('span')
                     if labelingTmp: labeling = labelingTmp.text
@@ -164,34 +184,33 @@ def ThinkGood():
                 else:
                     pass
 
-            res[(page-1)*10+(tr-1)] = {'source': 'ThinkGood',
-                       'title': title,
-                       'date': str(period),
-                       'url': n_url,
-                       'text': '',
-                       'text2': 'category: ' + ''.join(category) + "\nhost: " + host + "\n",
-                       'img': '',
-                       'subtitle': ''
-                       }
+            res[(page - 1) * 10 + (tr - 1)] = {'source': 'ThinkGood',
+                                               'title': title,
+                                               'date': str(period),
+                                               'url': n_url,
+                                               'text': text,
+                                               'text2': '',
+                                               'img': img,
+                                               'subtitle': ''
+                                               }
             # print("{}: {}".format((page-1)*10+(tr-1),res[(page-1)*10+(tr-1)]))
             # DB삽입
             client = MongoClient("mongodb://localhost:27017")
             db = client.crawl
-            db['external'].insert_one(res[(page-1)*10+(tr-1)])  # DB삽입
+            db['external'].insert_one(res[(page - 1) * 10 + (tr - 1)])  # DB삽입
             pbar.update(1)
 
     print('finish')
 
     pbar.close()
 
-
     #### 데이터 처리 ######################################################
-    date = date_f()
-
-    print('데이터프레임 변환\n')
-    df = pd.DataFrame(res).T
-    xlsx_file_name = '{}_{}개_{}.xlsx'.format('thinkGood', maxPage*10, date)
-    df.to_excel(xlsx_file_name)
+    # date = date_f()
+    #
+    # print('데이터프레임 변환\n')
+    # df = pd.DataFrame(res).T
+    # xlsx_file_name = '{}_{}개_{}.xlsx'.format('thinkGood', maxPage*10, date)
+    # df.to_excel(xlsx_file_name)
 
 def crawling_AI_text(url):
     req = requests.get(url)
@@ -208,13 +227,13 @@ def crawling_AI_text(url):
     newsDate = soup2.find('ul', {'class': 'infomation'}).select("li")[1].text.replace(" 입력 ", "")
 
     subtitle = BeautifulSoup(str(soup2.find('h4', {'class': 'subheading'})).replace("<br/>", "\n")) \
-        .text.strip().replace('\r', '').replace('<br/>', '\n').replace('\t', '')
+        .text.strip().replace('\r', '').replace('<br/>', '\n').replace('\t', '').replace("\\n\\n","   ")
 
     return (text, src, subtitle, newsDate)
 
 
 def AITimes():
-    news_num = 200 #todo 개수
+    news_num = 50 #todo 개수
 
     ################  크롤링 시작 ########################
 
@@ -250,7 +269,7 @@ def AITimes():
                                   'text': main_text,
                                   'text2': '',
                                   'img': src,
-                                  'subtitle': subtitle
+                                  'subtitle': '' if (subtitle == 'None') else subtitle
                                   }
                 # DB삽입
                 client = MongoClient("mongodb://localhost:27017")
@@ -272,17 +291,17 @@ def AITimes():
             break
 
     #### 데이터 처리 ######################################################
-    date = date_f()
+    #date = date_f()
 
-    print('데이터프레임 변환\n')
-    news_df = DataFrame(news_dict).T
+    #print('데이터프레임 변환\n')
+    #news_df = DataFrame(news_dict).T
 
-    folder_path = os.getcwd()
-    xlsx_file_name = 'AITimes_본문_{}개_{}.xlsx'.format(news_num, date)
+    #folder_path = os.getcwd()
+    #xlsx_file_name = 'AITimes_본문_{}개_{}.xlsx'.format(news_num, date)
 
-    news_df.to_excel(xlsx_file_name)
+    #news_df.to_excel(xlsx_file_name)
 
-    print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
+    #print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
 
 
 
@@ -317,7 +336,7 @@ def crawling_et_text(url):
 
 
 def News(source, source_url):
-    news_num = 10 #todo 개수
+    news_num = 50 #todo 개수
     print('뉴스 크롤링 시작')
     print('\n' + '=' * 100 + '\n')
 
@@ -399,16 +418,16 @@ def News(source, source_url):
             break
 
     #### 데이터 처리 ######################################################
-    date = date_f()
-    print('데이터프레임 변환\n')
-    news_df = DataFrame(news_dict).T
+    #date = date_f()
+    #print('데이터프레임 변환\n')
+    #news_df = DataFrame(news_dict).T
 
-    folder_path = os.getcwd()
-    xlsx_file_name = '{}_본문_{}개_{}.xlsx'.format(source, news_num, date)
+    #folder_path = os.getcwd()
+    #xlsx_file_name = '{}_본문_{}개_{}.xlsx'.format(source, news_num, date)
 
-    news_df.to_excel(xlsx_file_name)
+    #news_df.to_excel(xlsx_file_name)
 
-    print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
+    #print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
 
 def date_f():
     ###### 날짜 저장 ##########

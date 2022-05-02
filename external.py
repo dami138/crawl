@@ -1,14 +1,12 @@
-
 import argparse
 import sys, os
 import urllib
-
+import re
+from pandas import DataFrame
 from pymongo import MongoClient
 from selenium import webdriver
 import requests
-from pandas import DataFrame
 from bs4 import BeautifulSoup
-import pandas as pd
 from datetime import datetime
 import time
 from tqdm import tqdm
@@ -56,7 +54,6 @@ def extract_job(item):
 
     # position
     position = all_span[2].string
-
     # tag
     tag = post_list_info.find("p", {"class": "etc"}).string
 
@@ -101,19 +98,19 @@ def extract_jobs(last_page, url):
 def JobKorea():
     url = "https://www.jobkorea.co.kr/Search/?local=D000%2CI000%2CB000%2CG000%2CO000%2CE000%2CM000%2CJ000%2CA000%2CC000%2CH000%2CF000%2CL000%2CP000%2C1000%2CK000%2CQ000%2CN000"
     # last_page = get_last_page(url)
-    last_page = 5 #todo 개수설정 (마지막 페이지 정하기 한페이지당 20개)
+    last_page = 5  # todo 개수설정 (마지막 페이지 정하기 한페이지당 20개)
     jobs = extract_jobs(last_page, url)
-
     #### 데이터 처리 ######################################################
-    #date = date_f()
+    # date = date_f()
 
-    #print('데이터프레임 변환\n')
-    #news_df = DataFrame(jobs).transpose().T
+    # print('데이터프레임 변환\n')
+    # news_df = DataFrame(jobs).transpose().T
 
-    #xlsx_file_name = '{}_{}개_{}.xlsx'.format('jobkorea', last_page * 20, date)
-    #news_df.to_excel(xlsx_file_name)
+    # xlsx_file_name = '{}_{}개_{}.xlsx'.format('jobkorea', last_page * 20, date)
+    # news_df.to_excel(xlsx_file_name)
 
-    #print('엑셀 저장 완료')
+    # print('엑셀 저장 완료')
+
 
 def extract_thinkText(url):
     req = requests.get(url)
@@ -122,12 +119,12 @@ def extract_thinkText(url):
 
     img = ''
 
-    text = BeautifulSoup(str(soup2.find('div', {'class': 'info-cont'}))).text.replace("●","\n●").strip()
+    text = BeautifulSoup(str(soup2.find('div', {'class': 'info-cont'}))).text.replace("●", "\n●").strip()
 
     poster = soup2.find('img', {'id': 'poster'})
 
     if poster:
-        img = 'https://www.thinkcontest.com' +str(poster["src"])
+        img = 'https://www.thinkcontest.com' + str(poster["src"])
 
     return text, img
 
@@ -137,7 +134,7 @@ def ThinkGood():
     print('\n' + '=' * 100 + '\n')
 
     res = {}
-    maxPage = 10  # todo 개수설정 (한페이지 10개)
+    maxPage = 4  # todo 개수설정 (한페이지 10개)
 
     pbar = tqdm(total=maxPage, leave=True)
     for page in range(1, maxPage + 1):
@@ -163,7 +160,7 @@ def ThinkGood():
                     title = divs[0].find('a').text  # 제목
                     n_url = 'https://www.thinkcontest.com' + divs[0].find('a').get('href')  # url
 
-                    text,img = extract_thinkText(n_url)
+                    text, img = extract_thinkText(n_url)
 
                     labelingTmp = divs[0].find('span')
                     if labelingTmp: labeling = labelingTmp.text
@@ -182,6 +179,7 @@ def ThinkGood():
                     # end = tmp[1] #마감일
 
                 else:
+
                     pass
 
             res[(page - 1) * 10 + (tr - 1)] = {'source': 'ThinkGood',
@@ -193,6 +191,7 @@ def ThinkGood():
                                                'img': img,
                                                'subtitle': ''
                                                }
+
             # print("{}: {}".format((page-1)*10+(tr-1),res[(page-1)*10+(tr-1)]))
             # DB삽입
             client = MongoClient("mongodb://localhost:27017")
@@ -205,12 +204,14 @@ def ThinkGood():
     pbar.close()
 
     #### 데이터 처리 ######################################################
+
     # date = date_f()
     #
     # print('데이터프레임 변환\n')
     # df = pd.DataFrame(res).T
     # xlsx_file_name = '{}_{}개_{}.xlsx'.format('thinkGood', maxPage*10, date)
     # df.to_excel(xlsx_file_name)
+
 
 def crawling_AI_text(url):
     req = requests.get(url)
@@ -220,6 +221,12 @@ def crawling_AI_text(url):
     text = BeautifulSoup(str(soup2.find('article', {'id': 'article-view-content-div'})).replace("<br/>", "\n")) \
         .text.strip().replace('\r', '').replace('<br/>', '\n').replace('\t', '')
 
+    matchObj = re.search('<!--', text)
+    if matchObj:
+        text2 = text[:matchObj.start()]
+    else :
+        text2 = text
+
     src = ''
     if soup2.select_one("article > div > figure > img"):
         src = soup2.select_one("article > div > figure > img")["src"]
@@ -227,13 +234,14 @@ def crawling_AI_text(url):
     newsDate = soup2.find('ul', {'class': 'infomation'}).select("li")[1].text.replace(" 입력 ", "")
 
     subtitle = BeautifulSoup(str(soup2.find('h4', {'class': 'subheading'})).replace("<br/>", "\n")) \
-        .text.strip().replace('\r', '').replace('<br/>', '\n').replace('\t', '').replace("\\n\\n","   ")
+        .text.strip().replace('\r', '').replace('<br/>', '\n').replace('\t', '').replace("\\n\\n", "   ")
 
-    return (text, src, subtitle, newsDate)
+    return (text2, src, subtitle, newsDate)
+
 
 
 def AITimes():
-    news_num = 50 #todo 개수
+    news_num =10  # todo 개수
 
     ################  크롤링 시작 ########################
 
@@ -262,7 +270,7 @@ def AITimes():
             n_url = 'http://www.aitimes.com/' + n['href']
             main_text, src, subtitle, newsDate = crawling_AI_text(n_url)
             if (main_text):
-                news_dict[idx] = {'source': "AI타임스",
+                news_dict[idx] = {'source': "AITimes",
                                   'title': n.text,
                                   'date': str(newsDate),
                                   'url': n_url,
@@ -290,19 +298,78 @@ def AITimes():
             time.sleep(0.7)
             break
 
-    #### 데이터 처리 ######################################################
-    #date = date_f()
+    ### 데이터 처리 ######################################################
+    # date = date_f()
+    #
+    # print('데이터프레임 변환\n')
+    # news_df = DataFrame(news_dict).T
+    #
+    # folder_path = os.getcwd()
+    # xlsx_file_name = 'AITimes_본문_{}개_{}.xlsx'.format(news_num, date)
+    #
+    # news_df.to_excel(xlsx_file_name)
+    #
+    # print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
 
-    #print('데이터프레임 변환\n')
-    #news_df = DataFrame(news_dict).T
 
-    #folder_path = os.getcwd()
-    #xlsx_file_name = 'AITimes_본문_{}개_{}.xlsx'.format(news_num, date)
 
-    #news_df.to_excel(xlsx_file_name)
+def MedicalTimes():
+    news_num = 300  # todo 개수
 
-    #print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
+    ################  크롤링 시작 ########################
 
+    print('MedicalTimes 크롤링 시작')
+    print('\n' + '=' * 100 + '\n')
+    # ####동적 제어로 페이지 넘어가며 크롤링
+    news_dict = {}
+    idx = 1
+    pbar = tqdm(total=news_num, leave=True)
+
+    page = 0
+
+    while idx < news_num:
+
+        target_url = 'https://www.medicaltimes.com/Main/News/List.html?page={}&MainCate=&SubCate=&News_Level=&SectionTop=&ReporterID=&TargetDate=&keyword='.format(
+            page)
+        html = urllib.request.urlopen(target_url).read()
+        soup1 = BeautifulSoup(html, 'html.parser')
+
+        time.sleep(0.5)
+
+        table = soup1.find('div', {'class': 'newsList_wrap'})
+        articles = table.select('article')
+
+        for n in articles[:min(len(articles), news_num - idx + 1)]:
+            url = n.select_one('a')
+            n_url = 'https://www.medicaltimes.com' + url['href']
+            title = url.select_one('div > h4').text
+            main_text = url.find('div', {'class': 'list_txt'}).text
+            src = url.select_one('div > img')["src"]
+            newsDate = url.find('span', {'class': 'newsList_cont_date'}).text
+            if (main_text):
+                news_dict[idx] = {'source': "MedicalTimes",
+                                  'title': title,
+                                  'date': str(newsDate)[:10],
+                                  'url': n_url,
+                                  'text': main_text,
+                                  'text2': '',
+                                  'img': src,
+                                  'subtitle': ''
+                                  }
+                # DB삽입
+                client = MongoClient("mongodb://localhost:27017")
+                db = client.crawl
+                db['external'].insert_one(news_dict[idx])  # DB삽입
+                idx += 1
+                pbar.update(1)
+
+        if idx < news_num:
+            # 다음 페이지
+            page += 1
+            time.sleep(0.5)
+
+        else:
+            pbar.close()
 
 
 def crawling_KBS_text(url):
@@ -326,18 +393,18 @@ def crawling_et_text(url):
     req = requests.get(url)
     req.encoding = None
     soup = BeautifulSoup(req.text, 'html.parser')
-    text = BeautifulSoup(str(soup.find('section', {'class': 'article_body'})).replace("<br/>", "\n")).text.strip()
+    text = BeautifulSoup(str(soup.find('div', {'class': 'article_txt'})).replace("<br/>", "\n")).text.strip()
+
     src = ''
-    if soup.select_one("section > figure > a > img"):
-        src = soup.select_one("section > figure > a > img")["src"]
+    if soup.select_one("section > section > article > div > div > figure > a > img"):
+        src = soup.select_one("section > section > article > div > div > figure > a > img")["src"]
 
     newsDate = soup.find('time', {'class': 'date'}).text.replace("발행일 : ", "")
     return (text.replace('\r', '').replace('<br/>', '\n').replace('\t', ''), src, newsDate)
 
 
-def News(source, source_url):
-    news_num = 50 #todo 개수
-    print('뉴스 크롤링 시작')
+def News(source, source_url, news_num=20):
+    print(source + '뉴스 크롤링 시작')
     print('\n' + '=' * 100 + '\n')
 
     print('브라우저를 실행시킵니다(자동 제어)\n')
@@ -379,7 +446,8 @@ def News(source, source_url):
 
             if source == "KBS":
                 main_text, src, newsDate = crawling_KBS_text(n_url)
-            elif source == "전자신문":
+            elif source == "ETNews":
+
                 main_text, src, newsDate = crawling_et_text(n_url)
 
             if (main_text):
@@ -418,16 +486,18 @@ def News(source, source_url):
             break
 
     #### 데이터 처리 ######################################################
-    #date = date_f()
-    #print('데이터프레임 변환\n')
-    #news_df = DataFrame(news_dict).T
+    # date = date_f()
+    # print('데이터프레임 변환\n')
+    # news_df = DataFrame(news_dict).T
+    #
+    # folder_path = os.getcwd()
+    # xlsx_file_name = '{}_본문_{}개_{}.xlsx'.format(source, news_num, date)
+    #
+    # news_df.to_excel(xlsx_file_name)
+    #
+    # print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
 
-    #folder_path = os.getcwd()
-    #xlsx_file_name = '{}_본문_{}개_{}.xlsx'.format(source, news_num, date)
 
-    #news_df.to_excel(xlsx_file_name)
-
-    #print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
 
 def date_f():
     ###### 날짜 저장 ##########
@@ -436,23 +506,32 @@ def date_f():
     date = date.replace(':', '시') + '분'
     return date
 
-if __name__ == '__main__':
-    # python external.py -K AI 하면 kbs에서 검색어 AI로 최근 1주 글 n개씩 뽑아옴
 
-    # python external.py -J -T -A -K -E
-
+def dropDB():
     # db 비우기
     client = MongoClient("mongodb://localhost:27017")
     db = client.crawl
     db['external'].drop()
 
+
+if __name__ == '__main__':
+    # python external.py -K AI 하면 kbs에서 검색어 AI로 최근 1주 글 n개씩 뽑아옴
+
+    # python external.py -J -T -A -K -E
+
     parser = argparse.ArgumentParser()
+
+    parser.add_argument('--dropDB', '-D', action='store_true',
+                        help='dropDB for new crawling')
+
     parser.add_argument('--jobkorea', '-J', action='store_true',
                         help='jobkorea')
     parser.add_argument('--thinkgood', '-T', action='store_true',
                         help='thinkgood')
     parser.add_argument('--aitimes', '-A', action='store_true',
                         help='AI Times')
+    parser.add_argument('--medicaltimes', '-M', action='store_true',
+                        help='MedicalTimes')
     parser.add_argument('--kbs', '-K', action='store_true',
                         help='KBS')
     parser.add_argument('--etnews', '-E', action='store_true',
@@ -471,14 +550,25 @@ if __name__ == '__main__':
     if args.aitimes:
         AITimes()
 
+    if args.medicaltimes:
+        MedicalTimes()
+
     if args.kbs:
         source_url = 'https://search.naver.com/search.naver?where=news&query=kbs&sm=tab_clk.jou&sort=1&photo=0&field=0&pd=1&ds=2021.11.28&de=2021.12.05&docid=&related=0&mynews=0&office_type=&office_section_code=&news_office_checked=&nso=so%3Add%2Cp%3A1w&is_sug_officeid=1'
-        News('KBS', source_url)
+        News('KBS', source_url, 100)  # todo 개수
+
+        # 키워드 '건축'
+        source_url2 = 'https://search.naver.com/search.naver?sm=tab_hty.top&where=news&query=%EA%B1%B4%EC%B6%95&tqi=hElnLlprvTossMt%2BLpRssssstRG-468912&nso=so%3Add%2Cp%3A1w&de=2022.04.27&ds=2022.04.20&mynews=1&news_office_checked=1056&office_section_code=2&office_type=1&pd=1&photo=0&sort=1'
+        News('KBS', source_url2, 10)  # todo 개수
+        # 키워드 '토목'
+        source_url3 = 'https://search.naver.com/search.naver?sm=tab_hty.top&where=news&query=%ED%86%A0%EB%AA%A9&oquery=%EA%B1%B4%EC%B6%95&tqi=hElnRdprvTossMTchJRssssstG8-132324&nso=so%3Add%2Cp%3A1w&de=2022.04.27&ds=2022.04.20&mynews=1&news_office_checked=1056&office_section_code=2&office_type=1&pd=1&photo=0&sort=1'
+        News('KBS', source_url3, 5)  # todo 개수
 
     if args.etnews:
         source_url = 'https://search.naver.com/search.naver?where=news&query=%EC%A0%84%EC%9E%90%EC%8B%A0%EB%AC%B8&sm=tab_opt&sort=1&photo=0&field=0&pd=1&ds=&de=&docid=&related=0&mynews=0&office_type=0&office_section_code=0&news_office_checked=&nso=so%3Add%2Cp%3A1w&is_sug_officeid=1'
-        News('전자신문', source_url)
+        News('ETNews', source_url, 200)  # todo 개수
 
-    # if args.ja:
-    #     source_url='https://search.naver.com/search.naver?where=news&query=%EC%A4%91%EC%95%99%EC%9D%BC%EB%B3%B4&sm=tab_clk.jou&sort=1&photo=0&field=0&pd=1&ds=2021.11.29&de=2021.12.06&docid=&related=0&mynews=0&office_type=&office_section_code=&news_office_checked=&nso=so%3Add%2Cp%3A1w&is_sug_officeid=1'
-    #     News('중앙일보', source_url)
+
+
+
+

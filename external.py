@@ -280,9 +280,9 @@ def AITimes():
                                   'subtitle': '' if (subtitle == 'None') else subtitle
                                   }
                 # DB삽입
-                client = MongoClient("mongodb://localhost:27017")
-                db = client.crawl
-                db['external'].insert_one(news_dict[idx])  # DB삽입
+                # client = MongoClient("mongodb://localhost:27017")
+                # db = client.crawl
+                # db['external'].insert_one(news_dict[idx])  # DB삽입
                 idx += 1
                 pbar.update(1)
 
@@ -299,17 +299,17 @@ def AITimes():
             break
 
     ### 데이터 처리 ######################################################
-    # date = date_f()
-    #
-    # print('데이터프레임 변환\n')
-    # news_df = DataFrame(news_dict).T
-    #
-    # folder_path = os.getcwd()
-    # xlsx_file_name = 'AITimes_본문_{}개_{}.xlsx'.format(news_num, date)
-    #
-    # news_df.to_excel(xlsx_file_name)
-    #
-    # print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
+    date = date_f()
+
+    print('데이터프레임 변환\n')
+    news_df = DataFrame(news_dict).T
+
+    folder_path = os.getcwd()
+    xlsx_file_name = 'AITimes_본문_{}개_{}.xlsx'.format(news_num, date)
+
+    news_df.to_excel(xlsx_file_name)
+
+    print('엑셀 저장 완료 | 경로 : {}\\{}\n'.format(folder_path, xlsx_file_name))
 
 
 
@@ -561,7 +561,7 @@ if __name__ == '__main__':
         source_url2 = 'https://search.naver.com/search.naver?sm=tab_hty.top&where=news&query=%EA%B1%B4%EC%B6%95&tqi=hElnLlprvTossMt%2BLpRssssstRG-468912&nso=so%3Add%2Cp%3A1w&de=2022.04.27&ds=2022.04.20&mynews=1&news_office_checked=1056&office_section_code=2&office_type=1&pd=1&photo=0&sort=1'
         News('KBS', source_url2, 10)  # todo 개수
         # 키워드 '토목'
-        source_url3 = 'https://search.naver.com/search.naver?sm=tab_hty.top&where=news&query=%ED%86%A0%EB%AA%A9&oquery=%EA%B1%B4%EC%B6%95&tqi=hElnRdprvTossMTchJRssssstG8-132324&nso=so%3Add%2Cp%3A1w&de=2022.04.27&ds=2022.04.20&mynews=1&news_office_checked=1056&office_section_code=2&office_type=1&pd=1&photo=0&sort=1'
+        source_url3 = 'https://search.naver.com/search.naver?where=news&query=%ED%86%A0%EB%AA%A9&sm=tab_opt&sort=1&photo=0&field=0&pd=2&ds=&de=&docid=&related=0&mynews=1&office_type=1&office_section_code=2&news_office_checked=1056&nso=so%3Add%2Cp%3A1m&is_sug_officeid=0'
         News('KBS', source_url3, 5)  # todo 개수
 
     if args.etnews:

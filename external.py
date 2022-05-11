@@ -403,7 +403,7 @@ def crawling_et_text(url):
     return (text.replace('\r', '').replace('<br/>', '\n').replace('\t', ''), src, newsDate)
 
 
-def News(source, source_url, news_num=20):
+def News(source, source_url, news_num):
     print(source + '뉴스 크롤링 시작')
     print('\n' + '=' * 100 + '\n')
 
@@ -469,11 +469,8 @@ def News(source, source_url, news_num=20):
 
         if idx < news_num:
             cur_page += 1
-
             pages = browser.find_element_by_xpath('//div[@class="sc_page_inner"]')
-            next_page_url = [p for p in pages.find_elements_by_xpath('.//a') if p.text == str(cur_page)][
-                0].get_attribute(
-                'href')
+            next_page_url = [p for p in pages.find_elements_by_xpath('.//a') if p.text == str(cur_page)][0].get_attribute('href')
 
             browser.get(next_page_url)
             time.sleep(0.5)
@@ -562,7 +559,7 @@ if __name__ == '__main__':
         News('KBS', source_url2, 10)  # todo 개수
         # 키워드 '토목'
         source_url3 = 'https://search.naver.com/search.naver?where=news&query=%ED%86%A0%EB%AA%A9&sm=tab_opt&sort=1&photo=0&field=0&pd=2&ds=&de=&docid=&related=0&mynews=1&office_type=1&office_section_code=2&news_office_checked=1056&nso=so%3Add%2Cp%3A1m&is_sug_officeid=0'
-        News('KBS', source_url3, 5)  # todo 개수
+        News('KBS', source_url3, 10)  # todo 개수
 
     if args.etnews:
         source_url = 'https://search.naver.com/search.naver?where=news&query=%EC%A0%84%EC%9E%90%EC%8B%A0%EB%AC%B8&sm=tab_opt&sort=1&photo=0&field=0&pd=1&ds=&de=&docid=&related=0&mynews=0&office_type=0&office_section_code=0&news_office_checked=&nso=so%3Add%2Cp%3A1w&is_sug_officeid=1'

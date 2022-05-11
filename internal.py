@@ -17,8 +17,8 @@ def internal_f():
 
     for major in majors:
         cursor = connect.cursor()
-        sql = 'select * from (select ROWNUM, CREATE_DT, ARTICLE_TITLE,  DBMS_LOB.SUBSTR(ARTICLE_TEXT,32767,1), \
-               DBMS_LOB.GETLENGTH(ARTICLE_TEXT),MEMBER_TEL,BOARD_NO,ARTICLE_NO from  nhome.v_abc_게시물글조회 \
+        sql = 'select * from (select ROWNUM, CREATE_DT, ARTICLE_TITLE,  DBMS_LOB.SUBSTR(ARTICLE_TEXT,32767,1),  \
+               DBMS_LOB.GETLENGTH(ARTICLE_TEXT),MEMBER_TEL,nhome.v_abc_게시물글조회.BOARD_NO,ARTICLE_NO from  nhome.v_abc_게시물글조회 \
                inner join nhome.v_abc_게시글관리자정보 \
                on nhome.v_abc_게시물글조회.board_no = nhome.v_abc_게시글관리자정보.board_no \
                order by CREATE_DT  desc) where MEMBER_TEL = \'{}\' AND rownum <=10 '.format(major)
@@ -73,7 +73,7 @@ def internal_f():
                 temp = '화학소재공학부'
             elif str(row[5]) == "기계공학과" or str(row[5]) == '기계설계공학과' or str(row[5]) == "기계시스템공학과" or str(row[5]) == '기계 공학과' or str(row[5]) == '기계 설계공학과' or str(row[5]) == '기계융합공학과':
                 temp = '기계공학과'
-            elif str(row[5]) == "컴퓨터공학과" or str(row[5]) == '컴퓨터소프트웨어공학과' or str(row[5]) == "인공지능>공학과":
+            elif str(row[5]) == "컴퓨터공학과" or str(row[5]) == '컴퓨터소프트웨어공학과' or str(row[5]) == "인공지능공학과":
                 temp = '컴퓨터공학과'
             elif str(row[5]) == "수리빅데이터학과" or str(row[5]) == '응용수학과':
                 temp = '수리빅데이터학과'
@@ -81,6 +81,7 @@ def internal_f():
                 temp = '환경공학과'
             else:
                 temp = str(row[5])
+
 
             r['source'] = temp
 
@@ -107,6 +108,3 @@ def internal_f():
 
 if __name__ == '__main__':
     internal_f()
-
-
-

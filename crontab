@@ -1,0 +1,18 @@
+#crontab -e
+
+58 5 * * * /bin/bash /home/kumoh/postrecommender/server/crawl.sh >> /home/kumoh/postrecommender/server/crawl.log 2>&1
+
+---------------
+#crawl.sh
+
+#!/bin/bash
+export ORACLE_SID=XE
+export ORAENV_ASK=NO
+export ORACLE_BASE=/opt/oracle
+export ORACLE_HOME=$ORACLE_BASE/product/21c/dbhomeXE
+export PATH=/usr/sbin:$PATH:$ORACLE_HOME/bin:$PATH
+export LD_LIBRARY_PATH=$ORACLE_HOME/lib:/lib:/usr/lib:$LD_LIBRARY_PATH
+export NLS_LANG=KOREAN_KOREA.AL32UTF8
+
+cd postrecommender/server/
+/usr/bin/python ./main.py -D -J -T -A -K -E -M

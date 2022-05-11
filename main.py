@@ -60,7 +60,7 @@ if args.kbs:
     source_url2 = 'https://search.naver.com/search.naver?sm=tab_hty.top&where=news&query=%EA%B1%B4%EC%B6%95&tqi=hElnLlprvTossMt%2BLpRssssstRG-468912&nso=so%3Add%2Cp%3A1w&de=2022.04.27&ds=2022.04.20&mynews=1&news_office_checked=1056&office_section_code=2&office_type=1&pd=1&photo=0&sort=1'
     News('KBS', source_url2, 10)
     #키워드 '토목'
-    source_url3 = 'https://search.naver.com/search.naver?sm=tab_hty.top&where=news&query=%ED%86%A0%EB%AA%A9&oquery=%EA%B1%B4%EC%B6%95&tqi=hElnRdprvTossMTchJRssssstG8-132324&nso=so%3Add%2Cp%3A1w&de=2022.04.27&ds=2022.04.20&mynews=1&news_office_checked=1056&office_section_code=2&office_type=1&pd=1&photo=0&sort=1'
+    source_url3 = 'https://search.naver.com/search.naver?where=news&query=%ED%86%A0%EB%AA%A9&sm=tab_opt&sort=1&photo=0&field=0&pd=2&ds=&de=&docid=&related=0&mynews=1&office_type=1&office_section_code=2&news_office_checked=1056&nso=so%3Add%2Cp%3A1m&is_sug_officeid=0'
     News('KBS', source_url3, 5)
 
 if args.etnews:
